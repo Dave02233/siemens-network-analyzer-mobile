@@ -131,3 +131,10 @@ OPC UA resta invece la scelta piu' solida se il progetto dovra' crescere verso u
 
 Nemmeno iniziato.
 MVP focalizzato su scan rete e dettaglio device Siemens.
+
+
+## Link e start
+
+https://expo.dev/accounts/dave02233/projects/my-app/builds/f749f1da-8ea7-4211-a4ed-9f55d907ed8d
+
+npx expo start --dev-client
