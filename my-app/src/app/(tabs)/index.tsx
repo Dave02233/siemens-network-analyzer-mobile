@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
 
@@ -7,7 +7,7 @@ export default function HomeScreen() {
   const translateY = useSharedValue(30);
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 600 });
+    opacity.value = withTiming(1, { duration: 800 });
     translateY.value = withSpring(0);
   }, []);
 
