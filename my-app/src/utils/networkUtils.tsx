@@ -98,6 +98,7 @@ const NORMAL_PORTS = [
   8080,  // UI router/NAS
   102,   // Siemens S7
   502,   // Modbus TCP
+  4840,  // OPC UA
 ];
 
 const INTENSIVE_PORTS = [
