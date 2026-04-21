@@ -44,7 +44,7 @@ export default function NetworkScreen() {
     const timeout = setTimeout(() => {
       setError(true);
       setScanning(false);
-    }, ips.length * 50000);
+    }, ips.length * 40000);
 
     try {
       const results = await Network.pingSubnet(ips, mode); 
