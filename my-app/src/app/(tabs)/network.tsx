@@ -27,7 +27,7 @@ export default function NetworkScreen() {
     setError(false);
 
 
-    setElapsedTime(prev => ({initialMs: Date.now(), actualMs: Date.now()}))
+    setElapsedTime({initialMs: Date.now(), actualMs: Date.now()});
 
     const interval = setInterval(() => {
       setElapsedTime(prev => ({...prev, actualMs: Date.now()}))
