@@ -132,23 +132,22 @@ async function detectDeviceIntensive(ip: string, timeoutMs = 1000): Promise<Ping
 }
 
 export async function pingSubnet(
-  ips: string[],
-  mode: 'normal' | 'intensive',
-  timeoutMs = 1000
+    ips: string[],
+    mode: 'normal' | 'intensive',
+    timeoutMs = 1000
 ): Promise<SubnetResult> {
-  const results: SubnetResult = [];
+    const results: SubnetResult = [];
 
-  for (const ip of ips) {
-    const res =
-      mode === 'normal'
-        ? await detectDeviceNormal(ip, timeoutMs)
-        : await detectDeviceIntensive(ip, timeoutMs);
+    for (const ip of ips) {
+        const res =
+        mode === 'normal'
+            ? await detectDeviceNormal(ip, timeoutMs)
+            : await detectDeviceIntensive(ip, timeoutMs);
 
-    results.push(res);
+        results.push(res);
 
+        console.log(`${res.ip}: ${res.ok}`);
+    }
 
-    console.log(`${res.ip}: ${res.ok}`);
-  }
-
-  return results;
+    return results;
 }
