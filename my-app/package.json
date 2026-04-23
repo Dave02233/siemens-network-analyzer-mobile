@@ -24,6 +24,7 @@
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
+    "buffer": "^6.0.3",
     "expo": "~55.0.15",
     "expo-constants": "~55.0.14",
     "expo-dev-client": "~55.0.27",

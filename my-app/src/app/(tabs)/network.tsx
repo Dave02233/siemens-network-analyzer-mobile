@@ -1,14 +1,15 @@
-import * as tcpNetwork from '@/utils/tcpNetworkUtils';
+import * as Network from '@/utils/NetworkUtils';
+import * as TcpNetwork from '@/utils/tcpNetworkUtils';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
 
-export default function tcpNetworkScreen() {
+export default function NetworkScreen() {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(false);
-  const [searchAddresses, setSearchAddresses] = useState<tcpNetwork.ipRange>({ initial: "192.168.0.1", final: "192.168.0.254" })
-  const [reachableIps, setReachableIps] = useState<tcpNetwork.addressList>([])
-  const [elapsedTime, setElapsedTime] = useState<tcpNetwork.ElapsedTime>({ initialMs: Date.now(), actualMs: Date.now(), });
+  const [searchAddresses, setSearchAddresses] = useState<Network.ipRange>({ initial: "192.168.0.1", final: "192.168.0.254" })
+  const [reachableIps, setReachableIps] = useState<Network.addressList>([])
+  const [elapsedTime, setElapsedTime] = useState<Network.ElapsedTime>({ initialMs: Date.now(), actualMs: Date.now(), });
   const scale = useSharedValue(1);
 
   const pulse = useAnimatedStyle(() => ({
@@ -36,7 +37,7 @@ export default function tcpNetworkScreen() {
       withTiming(1, { duration: 100 })
     );
 
-    const ips = tcpNetwork.getIpRange(searchAddresses);
+    const ips = Network.getIpRange(searchAddresses);
 
     const timeout = setTimeout(() => {
       setError(true);
@@ -44,7 +45,7 @@ export default function tcpNetworkScreen() {
     }, ips.length * 40000);
 
     try {
-      const results = await tcpNetwork.pingSubnet(ips, mode); 
+      const results = await TcpNetwork.pingSubnet(ips, mode); 
       const reachable = results.filter(r => r.ok).map(r => r.ip);
       console.log('Reachable:', reachable);
 
@@ -65,7 +66,7 @@ export default function tcpNetworkScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>tcpNetwork Scan</Text>
+      <Text style={styles.title}>Network Scan</Text>
         <Animated.View style={[pulse, styles.card]}>
         <View style={styles.inputsRow}>
         <TextInput
