@@ -201,6 +201,40 @@ function buildSnmpGetReq (oids: string[], community = "public"): number[] {
             5   0   → NULL ✅
 */
 
-function parseSnmpRes (res: number[]) { TODO
+type tlvRead = {
+    tag: number,
+    length: number, 
+    value: number[]
+};
+
+function readTLV (bytes: number[], offset: number) :tlvRead {
+
+    const tag = bytes[offset];
+
+    const lengthForm = bytes[offset + 1] >> 7 === 1; // 0 = short (little endian), 1 = long (big endian, byte più significativo come primo byte)
+
+
+    let length = 0;
+    if (lengthForm) { // long form
+
+        const lengthOfLength = bytes[offset + 1] & 0x7F
+        const lengthArr = bytes.slice(offset + 2, offset + 2 + lengthOfLength);
+        length = lengthArr.reduce((acc, byte) => acc * 256 + byte, 0);
+
+    } else { // short form
+
+        length = bytes[offset + 1];
+    
+    }
+
+    const value = bytes.slice(offset + 2, offset + 2 + length); TODO big endian
+
+    return { tag, length, value};
+}
+
+readTLV([10, 20, 30], 0);
+
+function parseSnmpRes (res: number[]) { 
+    
 
 }
