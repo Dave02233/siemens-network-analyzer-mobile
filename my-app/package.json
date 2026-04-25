@@ -25,6 +25,7 @@
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
     "buffer": "^6.0.3",
+    "events": "^3.3.0",
     "expo": "~55.0.15",
     "expo-constants": "~55.0.14",
     "expo-dev-client": "~55.0.27",
@@ -53,6 +54,7 @@
     "with-react-native-tcp-socket": "^1.1.0"
   },
   "devDependencies": {
+    "@types/events": "^3.0.3",
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2"
   },
