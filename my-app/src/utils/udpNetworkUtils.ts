@@ -392,7 +392,9 @@ console.log(parseSnmpRes(fakePacket));
 // → [{ oid: "1.3.6.1.2.1.1.5.0", value: "MyRouter" }] ✅
 */
 
-function snmpGet (IPv4: string, oids: string[]) {
+export type SnmpResult = { oid: string; value: string };
+
+export function snmpGet (IPv4: string, oids: string[]): Promise<SnmpResult[]> {
     return new Promise((res, rej) => {
 
         let settled = false; // serve a impedire call una volta che la promise è già stata risolta, forse inutile ma vediamo
@@ -402,7 +404,7 @@ function snmpGet (IPv4: string, oids: string[]) {
             closeSocket();
             rej(new Error("Timeout connessione"));
 
-        }, 20000);
+        }, 10000);
         
         const socket = dgram.createSocket({ type: 'udp4' }) as unknown as UdpSocket;
 
@@ -446,6 +448,7 @@ function snmpGet (IPv4: string, oids: string[]) {
 
         });
 
+        /*
         socket.once('listening', () => {
 
             const packet = buildSnmpGetReq(oids);
@@ -459,24 +462,113 @@ function snmpGet (IPv4: string, oids: string[]) {
             })
 
         });
+        */
 
-        socket.bind(0); // Bind su porta random
+        socket.bind(0, () => { // Bind su porta random
+            const packet = buildSnmpGetReq(oids);
+            const buf = Buffer.from(packet);
+
+            socket.send(buf, 0, buf.length, 161, IPv4, (err) => {
+                if (err) {
+                    //console.log("Send error:", err);
+                    closeSocket();
+                    rej(err);
+                } else {
+                    //console.log("Pacchetto inviato, aspetto risposta...");
+                }
+            });
+        });
 
     })
+};
+
+
+type UdpProbeResult = {
+    ip: string;
+    ok: boolean;
+    protocol?: 'snmp' | 'ssdp';
+};
+
+// SNMP v1 GetRequest → sysName OID 1.3.6.1.2.1.1.5.0, community 'public'
+const SNMP_PROBE = Buffer.from([
+    0x30, 0x26,
+    0x02, 0x01, 0x00,
+    0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63,
+    0xa0, 0x19,
+    0x02, 0x04, 0x00, 0x00, 0x00, 0x01,
+    0x02, 0x01, 0x00,
+    0x02, 0x01, 0x00,
+    0x30, 0x0b,
+    0x30, 0x09,
+    0x06, 0x05, 0x2b, 0x06, 0x01, 0x02, 0x01,
+    0x05, 0x00,
+    0x05, 0x00,
+]);
+
+const SSDP_PROBE = Buffer.from(
+    'M-SEARCH * HTTP/1.1\r\n' +
+    'HOST: 239.255.255.250:1900\r\n' +
+    'MAN: "ssdp:discover"\r\n' +
+    'MX: 1\r\n' +
+    'ST: ssdp:all\r\n\r\n'
+);
+
+function udpProbeIp(
+    ip: string,
+    port: number,
+    payload: Buffer,
+    protocol: 'snmp' | 'ssdp',
+    timeoutMs = 2000
+): Promise<UdpProbeResult> {
+    return new Promise((resolve) => {
+        const socket = dgram.createSocket({ type: 'udp4' });
+        let resolved = false;
+
+        const done = (ok: boolean) => {
+            if (resolved) return;
+            resolved = true;
+            socket.close();
+            resolve({ ip, ok, protocol: ok ? protocol : undefined });
+        };
+
+        const timer = setTimeout(() => done(false), timeoutMs);
+
+        socket.bind(0, () => {
+            socket.send(payload, 0, payload.length, port, ip, (err) => {
+                if (err) { clearTimeout(timer); done(false); }
+            });
+        });
+
+        socket.on('message', () => {
+            clearTimeout(timer);
+            done(true);
+        });
+
+        socket.on('error', () => {
+            clearTimeout(timer);
+            done(false);
+        });
+    });
 }
 
-async function testSnmpGet() {
-    const ip = "192.168.1.51"; // inserisci l'IP del tuo router/dispositivo
+async function probeUdpDevice(ip: string, timeoutMs = 2000): Promise<UdpProbeResult> {
+    // Prima SNMP, poi SSDP
+    const snmp = await udpProbeIp(ip, 161, SNMP_PROBE, 'snmp', timeoutMs);
+    if (snmp.ok) return snmp;
 
-    try {
-        const result = await snmpGet(ip, [
-            "1.3.6.1.2.1.1.5.0", // sysName
-            "1.3.6.1.2.1.1.1.0"  // sysDescr
-        ]);
-        console.log("Risposta SNMP:", JSON.stringify(result, null, 2));
-    } catch (e) {
-        console.error("Errore:", e);
+    const ssdp = await udpProbeIp(ip, 1900, SSDP_PROBE, 'ssdp', timeoutMs);
+    return ssdp;
+}
+
+export async function udpScanSubnet(
+    ips: string[],
+    timeoutMs = 2000
+): Promise<UdpProbeResult[]> {
+    const results: UdpProbeResult[] = [];
+    for (const ip of ips) {
+        const res = await probeUdpDevice(ip, timeoutMs);
+        results.push(res);
+        if (res.ok) console.log(`UDP found: ${res.ip} via ${res.protocol}`);
     }
+    return results;
 }
-
-testSnmpGet();

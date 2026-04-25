@@ -39,26 +39,26 @@ function pingIp (ip: string, port: number, timeoutMs = 1000): Promise<PingResult
 
 
 const NORMAL_PORTS = [
-  80,    // HTTP
-  443,   // HTTPS
-  8080,  // UI router/NAS
-  102,   // Siemens S7
-  502,   // Modbus TCP
-  4840,  // OPC UA
+    102,   // Siemens S7 / ISO-on-TCP (sempre attivo su S7-1200/1500)
+    502,   // Modbus TCP
+    4840,  // OPC UA
+    5900,  // VNC standard (RealVNC, UltraVNC, TightVNC)
+    2308,  // Siemens HMI Transfer (RT Advanced / Comfort Panel)
+    80,    // Siemens CPU web server (HTTP) 
+    443,   // Siemens CPU web server (HTTPS)
+    5800,  // UltraVNC Java Viewer
+    5901,  // VNC display :1
+    5902,  // VNC display :2
 ];
 
 const INTENSIVE_PORTS = [
-  ...NORMAL_PORTS,
-  22,    // SSH
-  3389,  // RDP
-  5900,  // VNC
-  445,   // SMB
-  139,   // NetBIOS
-  32400, // Plex
-  8000,
-  8009,
-  8200,
-  1900,
+    ...NORMAL_PORTS,
+    22,    // SSH (PC industriale, gateway)
+    1033,  // Siemens HMI Transfer (Basic Panel)
+    5001,  // Siemens HMI Device Manager (Comfort Panel)
+    5002,  // Siemens HMI System Config (Comfort Panel)
+    50523, // Siemens HMI Transfer fallback (se 2308 occupato)
+    3389,  // RDP (WinCC, PC con TIA Portal)
 ];
 
 async function detectDeviceNormal(ip: string, timeoutMs = 1000): Promise<PingResult> {
