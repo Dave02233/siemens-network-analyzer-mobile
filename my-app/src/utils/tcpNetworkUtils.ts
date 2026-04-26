@@ -13,6 +13,7 @@ let localIp = "";
 
 export async function getIpAddress() {
     localIp = await Network.getIpAddressAsync();
+    console.log(`Indirizzo IP locale: ${localIp}`);
 }
 
 async function pingIp(ip: string, port: number, timeoutMs = 1000): Promise<PingResult> {
