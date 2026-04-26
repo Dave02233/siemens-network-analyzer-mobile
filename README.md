@@ -1,96 +1,104 @@
 # Siemens Network Analyzer
 
-Applicazione mobile sviluppata con Expo e React Native per attività di scan rete industriale, identificazione device e diagnostica rapida sul campo di dispositivi Siemens come PLC, HMI, switch e inverter.
+Applicazione mobile sviluppata con Expo e React Native per attività di scansione di rete industriale, identificazione device e diagnostica rapida sul campo di dispositivi Siemens come PLC, HMI, switch e inverter.
 
-## Obiettivo
+## Stato del progetto
 
-L'app nasce per l'uso on-site, senza dipendere da un PC, e punta a fornire una vista rapida della rete e un dettaglio tecnico per ogni device raggiungibile via IP.
-Il focus iniziale e' su impianti Siemens gia' indirizzati, con discovery di rete e diagnostica device-oriented.
+Progetto abbandonato.
 
-## Funzionalita' previste
+Il motivo principale non è la parte protocollare, ma l'inaffidabilità riscontrata nella scansione TCP concorrente su più indirizzi IP in ambiente Expo/React Native con moduli socket nativi. L'applicazione riusciva a gestire correttamente la parte SNMP, mentre falliva nella fase di probing TCP multi-host, anche con un numero molto basso di connessioni simultanee.
 
-- Scan della sottorete per individuare i dispositivi raggiungibili via IP.
-- Identificazione dei nodi tramite protocolli di rete compatibili con mobile, come SNMP.
-- Ricostruzione della topologia tramite LLDP quando disponibile sui dispositivi di rete Siemens.
-- Pagina di dettaglio per singolo device con informazioni tecniche e stato diagnostico.
-- Supporto a Siemens Web API per i PLC compatibili, tramite JSON-RPC su HTTPS.
-- Supporto OPC UA come opzione piu' standard e interoperabile per browsing, lettura variabili e monitoraggio dati.
+## Obiettivo iniziale
 
-## Stack tecnologico
+L'obiettivo era creare uno strumento mobile utilizzabile direttamente on-site, senza dipendere da un PC, per ottenere una vista rapida della rete e un dettaglio tecnico per ogni device raggiungibile via IP.
+
+Il focus era sugli impianti Siemens già indirizzati, con discovery di rete e diagnostica device-oriented.
+
+## Cosa funzionava
+
+La parte SNMP era stata implementata manualmente e funzionava correttamente:
+
+- costruzione del buffer SNMP a basso livello;
+- encoding dei messaggi;
+- parsing del buffer di risposta;
+- gestione delle richieste e delle risposte ai device raggiungibili.
+
+Questa parte del progetto ha validato la fattibilità del layer applicativo e protocollare su mobile.
+
+## Problema tecnico principale
+
+Il blocco reale del progetto è nato nella discovery TCP concorrente durante la scansione della subnet.
+
+In particolare:
+
+- il probing TCP di più IP in simultanea risultava instabile;
+- anche con concorrenza molto bassa, circa 8 socket TCP paralleli, il comportamento diventava inaffidabile;
+- i device non venivano più rilevati correttamente;
+- il problema persisteva anche provando strategie come `localAddress`;
+- il tempo speso in debug si è concentrato quasi interamente sulla gestione concorrente dei socket TCP.
+
+Di fatto, il limite non era il parsing SNMP né la logica applicativa, ma il layer di trasporto TCP in ambiente React Native con moduli nativi integrati in Expo development build.
+
+## Conclusione tecnica
+
+Il progetto è stato interrotto perché Expo/React Native non si è rivelato un ambiente adatto per un'app di network discovery industriale basata su scansione TCP concorrente della rete locale.
+
+Per questo tipo di strumento, il collo di bottiglia non era la UI né il codice TypeScript, ma l'affidabilità del networking low-level su mobile in questo stack.
+
+## Funzionalità previste nella fase iniziale
+
+Le funzionalità considerate nel perimetro del progetto erano:
+
+- scansione della sottorete per individuare i dispositivi raggiungibili via IP;
+- identificazione dei nodi tramite protocolli compatibili con mobile, in particolare SNMP;
+- ricostruzione della topologia tramite LLDP quando disponibile;
+- pagina di dettaglio per singolo device con informazioni tecniche e stato diagnostico.
+
+Le integrazioni future ipotizzate inizialmente non fanno più parte del progetto attivo, essendo il lavoro stato sospeso prima del superamento del problema infrastrutturale sul TCP.
+
+## Stack usato
 
 - Expo
 - React Native
 - TypeScript
 - Expo Router
-- Moduli TCP/UDP dove necessari per discovery e protocolli industriali.
+- moduli TCP/UDP nativi dove necessari per discovery e protocolli industriali
 
-Expo e' stato scelto per mantenere uno sviluppo semplice lato React Native, ma per usare librerie con codice nativo serve una development build e non basta Expo Go.
-Expo Go puo' usare solo le librerie gia' incluse nell'app precompilata, mentre i moduli nativi aggiuntivi richiedono una build personalizzata.
+Expo era stato scelto per semplificare lo sviluppo lato React Native, ma l'uso di librerie con codice nativo richiedeva una development build e non era compatibile con il solo Expo Go.
 
-## Architettura
+## Architettura pensata
 
-L'app e' organizzata in due blocchi principali.
+L'app era organizzata in due blocchi principali.
 
-### 1. Discovery rete
+### Discovery rete
 
-Questo livello si occupa di:
+Questo livello si occupava di:
+
 - scansione IP della rete locale;
 - identificazione dei device trovati;
 - raccolta metadati di rete;
-- ricostruzione dei collegamenti logici o fisici quando il device espone informazioni LLDP/SNMP.
+- ricostruzione dei collegamenti logici o fisici quando il device esponeva informazioni LLDP o SNMP.
 
-### 2. Dettaglio device
+### Dettaglio device
 
-Una volta selezionato un nodo, l'app mostra una schermata di dettaglio con informazioni specifiche per il dispositivo.
+Una volta selezionato un nodo, l'app mostrava una schermata di dettaglio con informazioni specifiche per il dispositivo rilevato.
 
-Per i PLC Siemens recenti, il canale preferenziale puo' essere la Web API del web server integrato, basata su JSON-RPC via HTTPS.
-In alternativa, OPC UA rappresenta il canale piu' standard e portabile, con focus su interoperabilita', scambio dati efficiente e subscriptions.
-
-## Casi d'uso
-
-- Trovare rapidamente PLC, HMI, switch e altri device Siemens presenti in una rete di impianto.
-- Aprire il dettaglio di un PLC per leggere stato, informazioni diagnostiche e dati utili al troubleshooting.
-- Usare Web API quando il device Siemens le supporta e serve una via semplice e leggera lato mobile.
-- Usare OPC UA quando serve uno standard aperto o quando il progetto dovra' evolvere verso dispositivi multi-vendor.
-
-## Struttura prevista del progetto
-
-```text
-app/
-  (tabs)/
-    index.tsx
-    network.tsx
-    devices.tsx
-  device/
-    [id].tsx
-components/
-services/
-  discovery/
-  snmp/
-  opcua/
-  siemens-webapi/
-types/
-utils/
-```
-
-La struttura separa discovery, protocolli e UI cosi' da mantenere il codice leggibile e facilmente estendibile.
-
-## Requisiti
+## Requisiti di sviluppo
 
 - Node.js
 - npm oppure pnpm
 - ambiente Expo
 - dispositivo Android o iOS per i test
-- development build Expo se vengono usati moduli nativi per socket TCP/UDP.
+- development build Expo se venivano usati moduli nativi per socket TCP/UDP
 
 ## Avvio progetto
 
 ```bash
 npm install
-npx expo start
+npx expo start --dev-client
 ```
 
-Se il progetto usa librerie native non supportate da Expo Go, va usata una development build invece dell'app Expo Go standard.
+In presenza di librerie native non supportate da Expo Go, era necessario usare una development build.
 
 Esempi:
 
@@ -106,35 +114,12 @@ eas build --profile development --platform android
 eas build --profile development --platform ios
 ```
 
-Le development build permettono di includere librerie con codice nativo e di personalizzare completamente il lato nativo dell'app.
+## Nota finale
 
-## Note tecniche
+Questo repository documenta un tentativo concreto di costruire uno scanner di rete industriale mobile focalizzato su dispositivi Siemens.
 
-L'app non punta alla configurazione Profinet layer 2 in stile PRONETA puro, ma a discovery e diagnostica su dispositivi gia' raggiungibili via IP.
-Questa scelta e' coerente con i limiti pratici del mobile e con l'obiettivo di avere uno strumento realmente usabile sul campo.
+La parte SNMP è risultata valida e funzionante. La parte di scansione TCP concorrente, invece, ha reso il progetto non sostenibile nello stack scelto, portando all'abbandono del lavoro.
 
-La Web API Siemens e' utile soprattutto per manutenzione e diagnostica di PLC compatibili.
-OPC UA resta invece la scelta piu' solida se il progetto dovra' crescere verso un'app piu' universale.
+## Build di riferimento
 
-## Roadmap
-
-- Discovery IP base
-- Identificazione device via SNMP
-- Lettura topologia via LLDP
-- Schermata dettaglio PLC Siemens
-- Integrazione Siemens Web API
-- Integrazione OPC UA
-- Watch list variabili
-- Diagnostica device e storico sessione locale
-
-## Stato progetto
-
-Nemmeno iniziato.
-MVP focalizzato su scan rete e dettaglio device Siemens.
-
-
-## Link e start
-
-https://expo.dev/accounts/dave02233/projects/my-app/builds/f749f1da-8ea7-4211-a4ed-9f55d907ed8d
-
-npx expo start --dev-client
+- https://expo.dev/accounts/dave02233/projects/my-app/builds/f749f1da-8ea7-4211-a4ed-9f55d907ed8d
