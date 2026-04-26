@@ -51,3 +51,24 @@ export function getIpRange (range: ipRange): string[] {
 
     return res;
 }
+
+export async function promiseLimit<T>(
+    tasks: (() => Promise<T>)[],
+    concurrency: number
+): Promise<T[]> {
+    const results: T[] = [];
+    let i = 0;
+
+    async function worker() {
+        while (i < tasks.length) {
+            const idx = i++;
+            results[idx] = await tasks[idx]();
+        }
+    }
+
+    await Promise.all(
+        Array.from({ length: concurrency }, worker)
+    );
+    return results;
+}
+

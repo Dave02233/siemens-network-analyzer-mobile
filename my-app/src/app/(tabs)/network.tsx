@@ -1,7 +1,7 @@
 import * as Network from '@/utils/NetworkUtils';
 import * as TcpNetwork from '@/utils/tcpNetworkUtils';
 import * as UdpNetwork from '@/utils/udpNetworkUtils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
 
@@ -58,6 +58,9 @@ export default function NetworkScreen() {
   }));
 
   const handleScan = async (mode: 'normal' | 'intensive') => {
+
+    //TcpNetwork.debugTest(); return; funzionante
+
     if (scanning) return;
 
     setScanning(true);
@@ -84,18 +87,26 @@ export default function NetworkScreen() {
     }, ips.length * 40000);
 
     try {
-      // 1. Scan TCP + UDP in parallelo
-      const [tcpResults, udpResults] = await Promise.all([
-        TcpNetwork.pingSubnet(ips, mode),
-        UdpNetwork.udpScanSubnet(ips),
-      ]);
+      //TcpNetwork.testFun(); return;
+      //TcpNetwork.debugDetect(); return;
+      // 1. Scan TCP
+      // Test: chiama detectDeviceNormal direttamente da handleScan
+      TcpNetwork.getIpAddress();
+      const directTest = await TcpNetwork.detectDeviceNormal('192.168.1.53', 1000);
+      console.log('directTest da handleScan:', directTest);
 
+
+      const tcpResults = await TcpNetwork.pingSubnet(ips, mode);
       const tcpSet = new Set(tcpResults.filter(r => r.ok).map(r => r.ip));
-      const udpSet = new Set(udpResults.filter(r => r.ok).map(r => r.ip));
-      const allIps = [...new Set([...tcpSet, ...udpSet])];
-
       console.log('TCP:', [...tcpSet]);
-      console.log('UDP only:', [...udpSet].filter(ip => !tcpSet.has(ip)));
+
+      // 2. Scan UDP solo su IP non trovati dal TCP
+      const ipsForUdp = ips.filter(ip => !tcpSet.has(ip));
+      const udpResults = await UdpNetwork.udpScanSubnet(ipsForUdp, 2000, 5);
+      const udpSet = new Set(udpResults.filter(r => r.ok).map(r => r.ip));
+      console.log('UDP only:', [...udpSet]);
+
+      const allIps = [...new Set([...tcpSet, ...udpSet])];
 
       clearTimeout(timeout);
       clearInterval(interval);

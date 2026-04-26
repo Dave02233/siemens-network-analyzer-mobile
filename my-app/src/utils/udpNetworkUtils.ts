@@ -2,6 +2,7 @@ import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
 import type _UdpSocket from 'react-native-udp/lib/types/UdpSocket';
 import type { EventEmitter } from 'events';
+import { promiseLimit } from './NetworkUtils';
 
 type UdpSocket = _UdpSocket & EventEmitter;
 
@@ -562,13 +563,9 @@ async function probeUdpDevice(ip: string, timeoutMs = 2000): Promise<UdpProbeRes
 
 export async function udpScanSubnet(
     ips: string[],
-    timeoutMs = 2000
+    timeoutMs = 2000,
+    concurrency = 5
 ): Promise<UdpProbeResult[]> {
-    const results: UdpProbeResult[] = [];
-    for (const ip of ips) {
-        const res = await probeUdpDevice(ip, timeoutMs);
-        results.push(res);
-        if (res.ok) console.log(`UDP found: ${res.ip} via ${res.protocol}`);
-    }
-    return results;
+    const tasks = ips.map(ip => () => probeUdpDevice(ip, timeoutMs));
+    return promiseLimit(tasks, concurrency);
 }
